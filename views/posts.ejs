@@ -1,0 +1,12 @@
+<%- include('header') %>
+<% posts.forEach(function (post) { %>
+<%- include('components/post-content', { post: post }) %>
+<% }) %>
+<% if (ctrComments){ %>
+<%- include('components/comments') %>
+<% } %>
+<div class="pageBottom"></div>
+<script>
+    require(['blog/posts']);
+</script>
+<%- include('footer') %>
