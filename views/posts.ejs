@@ -1,12 +1,22 @@
 <%- include('header') %>
-<% posts.forEach(function (post) { %>
-<%- include('components/post-content', { post: post }) %>
-<% }) %>
+<div class="posts-ul">
+    <% posts.forEach(function (post) { %>
+    <%- include('components/post-content', { post: post }) %>
+    <% }) %>
+</div>
+
 <% if (ctrComments){ %>
 <%- include('components/comments') %>
 <% } %>
 <div class="pageBottom"></div>
+<% if (!ctrComments){ %>
 <script>
+    var count = <%= count %>,
+        limit = <%= constsNum.posts.limiter %>;
+    var pageNum = Math.ceil(count / limit);
     require(['blog/posts']);
 </script>
+<% }else{ %>
+    require(['blog/posts']);
+<% } %>
 <%- include('footer') %>

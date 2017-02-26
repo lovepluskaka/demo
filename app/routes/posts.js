@@ -10,17 +10,45 @@ var checkLogin = require('../../middlewares/check').checkLogin;
 
 // GET /posts 所有用户或者特定用户的文章页
 //   eg: GET /posts?author=xxx
+//  文章分页
+// eg:GET /posts#Pageindex
 router.get('/', checkLogin, function (req, res, next) {
-    var author = req.query.author;
-    PostModal.getPost(author)
+    var author = req.query.author,
+        limiter = constsNum.posts.limiter,
+        count,
+        user = req.session.user;
+    PostModal.countPosts(author)
+        .then(function (num) {
+            count = num || 0;
+        })
+        .catch(next);
+    limiter = limiter || 10;
+    PostModal.getPost(author, 1, limiter)
         .then(function (results) {
-            res.render('posts', {posts: results, comments: 0, ctrComments: false});
+            res.render('posts', {posts: results, comments: 0, ctrComments: false, count: count,user:user});
         })
         .catch(next);
 });
-//发表一篇文章
+//文章分页
 router.post('/', checkLogin, function (req, res, next) {
-    res.send(req.flash());
+    var index = parseInt(req.fields.index.trim()),
+        user = req.session.user,
+        author = req.query.author,
+        limiter = constsNum.posts.limiter,
+        user = req.session.user;
+    if (!user) {
+        req.flash('error', '请登陆后查看更多信息');
+        res.redirect('back');
+    } else {
+        PostModal.getPost(author, index, limiter)
+            .then(function (results) {
+                var data = results;
+                res.send({data:data,user:user});
+            })
+            .catch(function (err) {
+                res.status(404).end();
+            });
+    }
 });
 //发表文章页
 router.get('/create', checkLogin, function (req, res, next) {
@@ -69,7 +97,7 @@ router.get('/:postId', function (req, res, next) {
     var result = null,
         posts = null,
         comments = null,
-    user = null;
+        user = null;
     Promise.all([
         PostModal.incPv(postsId),
         PostModal.getPostById(postsId),
@@ -156,7 +184,7 @@ router.post('/:postId/comment', checkLogin, function (req, res, next) {
         commentModal.create(comment)
             .then(function (result) {
                 //给评论总数加1
-                PostModal.incComment(postId,1)
+                PostModal.incComment(postId, 1)
                     .then(function (result) {
                         req.flash('success', '评论成功');
                         // req.fields.content = null;
@@ -164,7 +192,7 @@ router.post('/:postId/comment', checkLogin, function (req, res, next) {
                     })
             })
             .catch(function (err) {
-                req.flash('error','评论失败');
+                req.flash('error', '评论失败');
             })
     }
 });
@@ -173,11 +201,11 @@ router.get('/:postId/comment/:commentId/remove', checkLogin, function (req, res,
     var commentId = req.params.commentId;
     var author = req.session.user._id;
     var postId = req.params.postId;
-    commentModal.delOneComment(commentId,author)
+    commentModal.delOneComment(commentId, author)
         .then(function (result) {
-            PostModal.incComment(postId,-1)
+            PostModal.incComment(postId, -1)
                 .then(function (result) {
-                    req.flash('success','删除成功');
+                    req.flash('success', '删除成功');
                     res.redirect('back');
                 })
         })

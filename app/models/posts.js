@@ -14,13 +14,15 @@ module.exports = {
             .populate({path: 'author'})
     },
 //    按照时间降序获取所有文章或所有用户的文章
-    getPost: function getPost(author) {
+    getPost: function getPost(author,index,limiter) {
         var query = {};
         if (author) {
             query.author = author;
         }
         return Post.find(query)
-            .populate({path: 'author'})
+            .skip((index-1)*limiter)
+            .limit(limiter)
+            .populate({path: 'author',select:{password:0}})
             .sort({_id: -1});
     },
 //    通过id给文章pv加1
@@ -44,6 +46,11 @@ module.exports = {
     },
 //   计算文章总数
     countPosts:function countPosts(author) {
-        return Post.count({author:author})
+        if (author){
+            return Post.count({author:author})
+        }else{
+            return Post.count()
+        }
+
     }
 };

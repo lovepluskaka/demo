@@ -23,6 +23,7 @@ require('events').EventEmitter.prototype._maxListeners = 20;
 global._ = require('underscore');
 _.str = require('underscore.string');
 global.Promise = require('bluebird');
+global.constsNum = require('./config/consts');
 
 
 //设置模板目录
